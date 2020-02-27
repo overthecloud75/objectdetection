@@ -12,8 +12,9 @@
    
 ### 3. Usage
 
-   python objectdetection.py 
-   python objectdetection.py --img_path <img_path>
+   python objectdetection.py                           (for obect detecion in videocapture) 
+   
+   python objectdetection.py --img_path <img_path>     (for obect detecion in a single image) 
    
   Example : python objectdetection.py --img_path content.jpg
    
