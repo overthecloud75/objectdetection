@@ -1,3 +1,8 @@
+import os
+import time
+import argparse
+
+# tensorflow 2.1.0
 import tensorflow as tf
 import tensorflow_hub as hub
 
@@ -15,14 +20,13 @@ from PIL import ImageDraw
 from PIL import ImageFont
 from PIL import ImageOps
 import cv2
-import os
 
-import time
+def parse_args():
+    description = 'object detection'
+    parser = argparse.ArgumentParser(description=description)
 
-# Print Tensorflow version
-# Check available GPU devices.
-print(tf.__version__)
-print("The following GPU devices are available: %s" % tf.test.gpu_device_name())
+    parser.add_argument('--image_path', type=str, default='default', help='detect object in an image')
+    return parser.parse_args()
 
 def download_and_resize_image(url, new_width=256, new_height=256,
                               display=False):
@@ -112,14 +116,10 @@ def draw_boxes(image, boxes, class_names, scores, max_boxes=10, min_score=0.1):
       np.copyto(image, np.array(image_pil))
   return image
 
-def load_img(path):
-  img = tf.io.read_file(path)
-  img = tf.image.decode_jpeg(img, channels=3)
-  return img
-
-def run_detector(detector, path):
-  converted_img = tf.convert_to_tensor(path, dtype=tf.float32)
+def run_detector(detector, img):
+  converted_img = tf.convert_to_tensor(img, dtype=tf.float32)
   converted_img = tf.expand_dims(converted_img, 0)
+
   start_time = time.time()
   result = detector(converted_img)
   end_time = time.time()
@@ -130,17 +130,23 @@ def run_detector(detector, path):
   print("Inference time: ", end_time-start_time)
 
   image_with_boxes = draw_boxes(
-      path, result["detection_boxes"],
+      img, result["detection_boxes"],
       result["detection_class_entities"], result["detection_scores"])
 
   return image_with_boxes
 
 if __name__ == '__main__' :
 
+    args = parse_args()
+    image_path = args.image_path
+
+    # Print Tensorflow version
+    # Check available GPU devices.
+    print(tf.__version__)
+    print("The following GPU devices are available: %s" % tf.test.gpu_device_name())
+
     module_handle = "https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1" #@param ["https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1", "https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1"]
     #module_handle = "https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1"  # @param ["https://tfhub.dev/google/openimages_v4/ssd/mobilenet_v2/1", "https://tfhub.dev/google/faster_rcnn/openimages_v4/inception_resnet_v2/1"]
-
-    cap = cv2.VideoCapture(0)
 
     #print(os.getcwd())
     start_time = time.time()
@@ -148,13 +154,27 @@ if __name__ == '__main__' :
     #detector = tf.saved_model.load(os.getcwd()).signatures['default']
     end_time = time.time()
     print("detector loading time: ", end_time - start_time)
-    while True:
-        ret, frame = cap.read()
+
+    if image_path == 'default':
+        cap = cv2.VideoCapture(0)
+
+        while True:
+            ret, frame = cap.read()
+            frame = run_detector(detector, frame)
+            cv2.imshow('frame', frame)
+            time.sleep(1)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        cap.realease()
+        cv2.destroyAllWindows()
+
+    else:
+        print(image_path)
+        frame = cv2.imread(image_path)
         frame = run_detector(detector, frame)
+        cv2.imwrite('converted_' + image_path, frame)
         cv2.imshow('frame', frame)
-        time.sleep(1)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    cap.realease()
-    cv2.destroyAllWindows()
+        cv2.waitKey()
+
 
