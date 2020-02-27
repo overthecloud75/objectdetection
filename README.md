@@ -10,7 +10,14 @@
    
    https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_gui/py_video_display/py_video_display.html
    
-### 3. Acknowlegemetns
+### 3. Usage
+
+   python objectdetection.py 
+   python objectdetection.py --img_path <img_path>
+   
+  Example : python objectdetection.py --img_path content.jpg
+   
+### 4. Acknowlegemetns
 
 This implemetation has been tested with Tensorflow 2.1.0 on windows 10
 
